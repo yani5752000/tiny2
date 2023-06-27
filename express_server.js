@@ -56,3 +56,18 @@ app.get("/urls/:id", (req, res) => {
 app.get("/u/:id", (req, res) => {
     res.redirect(urlDatabase[req.params.id]);
 })
+
+app.post("/delete/:id", (req,res) => {
+    delete urlDatabase[req.params.id];
+    res.redirect("/urls");
+})
+
+app.get("/edit/:id", (req, res) => {
+    res.render("edit.ejs", 
+    {shortUrl: req.params.id});
+})
+
+app.post("/edit/:id", (req, res) => {
+    urlDatabase[req.params.id] = req.body.newLongUrl;
+    res.redirect("/urls");
+})
