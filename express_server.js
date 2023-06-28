@@ -1,7 +1,10 @@
 const express = require("express");
+const cookieParser = require("cookie-parser");
 const PORT = 8080;
 const app = express();
+app.use(cookieParser());
 app.set("view engin", "ejs");
+
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -23,6 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
     res.send("Hi this is tiny2");
+    console.log("cookies: ", req.cookies);
 })
 
 app.get("/urls.json", (req, res) => {
@@ -74,5 +78,6 @@ app.post("/edit/:id", (req, res) => {
 
 app.post("/login", (req, res) => {
     res.cookie("username", req.body.username);
-    res.redirect("/urls")
+    console.log("username is ", req.cookies.username);
+    res.redirect("/")
 })
