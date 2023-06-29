@@ -27,6 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
     res.send("Hi this is tiny2");
     console.log("cookies: ", req.cookies);
+    console.log("username is ", req.cookies.username);
 })
 
 app.get("/urls.json", (req, res) => {
@@ -38,7 +39,14 @@ app.get("/helloWorld", (req, res) => {
 })
 
 app.get("/urls", (req, res) => {
-    const templateVars = {urls: urlDatabase};
+    console.log("????username is ", req.cookies.username);
+    let value;
+    if(req.cookies.username) {
+        value = req.cookies.username;
+    } else {
+        value = null;
+    }
+    const templateVars = {urls: urlDatabase, username: req.cookies.username};
     res.render("urls_index.ejs", templateVars);
 })
 
@@ -78,6 +86,11 @@ app.post("/edit/:id", (req, res) => {
 
 app.post("/login", (req, res) => {
     res.cookie("username", req.body.username);
-    console.log("username is ", req.cookies.username);
-    res.redirect("/")
+    res.redirect("/urls")
+})
+
+app.post("/logout", (req, res) => {
+    console.log("<<<in post/logout");
+    res.clearCookie("username");
+    res.redirect("/urls");
 })
