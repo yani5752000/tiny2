@@ -26,8 +26,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
     res.send("Hi this is tiny2");
-    console.log("cookies: ", req.cookies);
-    console.log("username is ", req.cookies.username);
 })
 
 app.get("/urls.json", (req, res) => {
@@ -39,19 +37,13 @@ app.get("/helloWorld", (req, res) => {
 })
 
 app.get("/urls", (req, res) => {
-    console.log("????username is ", req.cookies.username);
-    let value;
-    if(req.cookies.username) {
-        value = req.cookies.username;
-    } else {
-        value = null;
-    }
     const templateVars = {urls: urlDatabase, username: req.cookies.username};
     res.render("urls_index.ejs", templateVars);
 })
 
 app.get("/urls/new", (req, res) => {
-    res.render("urls_new.ejs");
+    const templateVars = {username: req.cookies.username};
+    res.render("urls_new.ejs", templateVars);
 });
 
 app.post("/urls", (req, res) => {
@@ -61,7 +53,11 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-    const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+    const templateVars = { 
+        id: req.params.id, 
+        longURL: urlDatabase[req.params.id],
+        username: req.cookies.username
+     };
     res.render("urls_show.ejs", templateVars);
 });
 
@@ -76,7 +72,7 @@ app.post("/delete/:id", (req,res) => {
 
 app.get("/edit/:id", (req, res) => {
     res.render("edit.ejs", 
-    {shortUrl: req.params.id});
+    {shortUrl: req.params.id, username: req.cookies.username});
 })
 
 app.post("/edit/:id", (req, res) => {
@@ -90,7 +86,6 @@ app.post("/login", (req, res) => {
 })
 
 app.post("/logout", (req, res) => {
-    console.log("<<<in post/logout");
     res.clearCookie("username");
     res.redirect("/urls");
 })
