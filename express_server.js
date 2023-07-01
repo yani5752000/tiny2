@@ -11,7 +11,27 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-const usersDatabase = {};
+const users = {
+    userRandomID: {
+      id: "userRandomID",
+      email: "user@example.com",
+      password: "purple-monkey-dinosaur",
+    },
+    user2RandomID: {
+      id: "user2RandomID",
+      email: "user2@example.com",
+      password: "dishwasher-funk",
+    },
+  };
+
+  const getUserByEmail = (email) => {
+    for (let id in users) {
+        if(users[id].email == email) {
+            return users[id];
+        }
+    }
+    return null;
+  }
 
 function generateRandomString() {
     const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -39,7 +59,7 @@ app.get("/helloWorld", (req, res) => {
 })
 
 app.get("/urls", (req, res) => {
-    const templateVars = {urls: urlDatabase, username: req.cookies.username};
+    const templateVars = {urls: urlDatabase, user: users[req.cookies.user_id]};
     res.render("urls_index.ejs", templateVars);
 })
 
@@ -88,7 +108,7 @@ app.post("/login", (req, res) => {
 })
 
 app.post("/logout", (req, res) => {
-    res.clearCookie("username");
+    res.clearCookie("user_id");
     res.redirect("/urls");
 })
 
@@ -97,7 +117,20 @@ app.get("/register", (req, res) => {
 })
 
 app.post("/register", (req, res) => {
-    usersDatabase[req.body.email] = req.body.password;
-    res.cookie("username", req.body.email);
+    console.log("first users: ", users);
+    if (req.body.email == "" || req.body.password == "") {
+        return res.send("400 Bad Request- email or password missing");
+    }
+    if(getUserByEmail(req.body.email)) {
+        return res.send("400 Bad Request, this email is already registered");
+    }
+    const userId = generateRandomString();
+    users[userId] = {
+        id: userId,
+        email: req.body.email,
+        password: req.body.password
+    }
+    console.log("users: ", users);
+    res.cookie("user_id", userId);
     res.redirect("/urls");
 })
