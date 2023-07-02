@@ -64,7 +64,7 @@ app.get("/urls", (req, res) => {
 })
 
 app.get("/urls/new", (req, res) => {
-    const templateVars = {username: req.cookies.username};
+    const templateVars = {user: users[req.cookies.user_id]};
     res.render("urls_new.ejs", templateVars);
 });
 
@@ -78,7 +78,7 @@ app.get("/urls/:id", (req, res) => {
     const templateVars = { 
         id: req.params.id, 
         longURL: urlDatabase[req.params.id],
-        username: req.cookies.username
+        user: users[req.cookies.user_id]
      };
     res.render("urls_show.ejs", templateVars);
 });
@@ -94,7 +94,7 @@ app.post("/delete/:id", (req,res) => {
 
 app.get("/edit/:id", (req, res) => {
     res.render("edit.ejs", 
-    {shortUrl: req.params.id, username: req.cookies.username});
+    {shortUrl: req.params.id, user: users[req.cookies.user_id]});
 })
 
 app.post("/edit/:id", (req, res) => {
@@ -102,18 +102,19 @@ app.post("/edit/:id", (req, res) => {
     res.redirect("/urls");
 })
 
-app.post("/login", (req, res) => {
-    res.cookie("username", req.body.username);
-    res.redirect("/urls")
-})
+// app.post("/login", (req, res) => {
+//     res.cookie("username", req.body.username);
+//     res.redirect("/urls")
+// })
 
 app.post("/logout", (req, res) => {
     res.clearCookie("user_id");
-    res.redirect("/urls");
+    res.redirect("/login");
 })
 
 app.get("/register", (req, res) => {
-    res.render("register.ejs");
+    const templateVars = {user: users[req.cookies.user_id]};
+    res.render("register.ejs", templateVars);
 })
 
 app.post("/register", (req, res) => {
@@ -132,5 +133,24 @@ app.post("/register", (req, res) => {
     }
     console.log("users: ", users);
     res.cookie("user_id", userId);
+    res.redirect("/urls");
+})
+
+app.get("/login", (req, res) => {
+    const templateVars = {user: users[req.cookies.user_id]};
+    res.render("login.ejs", templateVars);
+})
+
+app.post("/login", (req, res) => {
+    const email = req.body.email;
+    const password = req.body.password;
+    if(!getUserByEmail(email)) {
+        return res.send("403 Forbidden. No such email has been registered");
+    }
+    if(getUserByEmail(email).password != password) {
+        return res.send("403 Forbidden. Passwords do not match");
+    }
+    console.log("id: ", getUserByEmail(email).id);
+    res.cookie("user_id", getUserByEmail(email).id);
     res.redirect("/urls");
 })
