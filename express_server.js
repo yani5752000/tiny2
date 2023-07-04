@@ -33,6 +33,16 @@ const users = {
     return null;
   }
 
+  const urlsForUser = (userId) => {
+    const userUrls = {};
+    for(const id in urlDatabase) {
+        if (urlDatabase[id].userId == userId) {
+            userUrls[id] = urlDatabase[id];
+        }
+    }
+    return userUrls;
+  }
+
 function generateRandomString() {
     const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let result = '';
@@ -59,35 +69,68 @@ app.get("/helloWorld", (req, res) => {
 })
 
 app.get("/urls", (req, res) => {
-    const templateVars = {urls: urlDatabase, user: users[req.cookies.user_id]};
+    if(!req.cookies.user_id) {
+        return res.send("<p>You are not logged in.</p></br><a href='/login'>Please login or register here</a>");
+    }
+    const templateVars = {urls: urlsForUser(req.cookies.user_id), user: users[req.cookies.user_id]};
+    console.log("/urls req.cookies.user_id: ", req.cookies.user_id);
     res.render("urls_index.ejs", templateVars);
 })
 
 app.get("/urls/new", (req, res) => {
+    if(!req.cookies.user_id) {
+        return res.redirect("/login");
+    }
     const templateVars = {user: users[req.cookies.user_id]};
     res.render("urls_new.ejs", templateVars);
 });
 
 app.post("/urls", (req, res) => {
+    if(!req.cookies.user_id) {
+        return res.send("You can't add a new url because you are not logged in.");
+    }
     const shortUrl = generateRandomString();
-    urlDatabase[shortUrl] = req.body.longURL;
+    urlDatabase[shortUrl] = {longUrl: req.body.longURL, userId: req.cookies.user_id};
+    console.log("users: ", users);
+    console.log("urlDatabase: ", urlDatabase);
     res.redirect(`/urls/${shortUrl}`);
 });
 
 app.get("/urls/:id", (req, res) => {
+    if (!req.cookies.user_id) {
+        return res.send("<p>You are not logged in.</p></br><a href='/login'>Please login or register here</a>");
+    }
+    if (urlDatabase[req.params.id].userId != req.cookies.user_id) {
+        return res.send("Sorry! This url does not belong to you");
+    }
     const templateVars = { 
         id: req.params.id, 
-        longURL: urlDatabase[req.params.id],
+        longURL: urlDatabase[req.params.id].longUrl,
         user: users[req.cookies.user_id]
      };
     res.render("urls_show.ejs", templateVars);
 });
 
 app.get("/u/:id", (req, res) => {
-    res.redirect(urlDatabase[req.params.id]);
+    if(!urlDatabase[req.params.id]) {
+        return res.send("This short url does not exist");
+    }
+    res.redirect(urlDatabase[req.params.id].longURL);
 })
 
 app.post("/delete/:id", (req,res) => {
+    if (!urlDatabase[req.params.id]) {
+        return res.send("Sorry! The url does not exist.")
+    }
+    console.log("req.cookies: ", req.cookies);
+    console.log("/delete req.cookies.user_id: ", req.cookies.user_id);
+    console.log("urlDatabase: ", urlDatabase);
+    if(!req.cookies.user_id) {
+        return res.send("Sorry! To delete, you must be logged in.")
+    }
+    if (urlDatabase[req.params.id].userId != req.cookies.user_id){
+        return res.send("Sorry! To delete, the short url must be yours.")
+    }
     delete urlDatabase[req.params.id];
     res.redirect("/urls");
 })
@@ -98,14 +141,18 @@ app.get("/edit/:id", (req, res) => {
 })
 
 app.post("/edit/:id", (req, res) => {
-    urlDatabase[req.params.id] = req.body.newLongUrl;
+    if (!urlDatabase[req.params.id]) {
+        return res.send("Sorry! The url does not exist.")
+    }
+    if(!req.cookies.user_id) {
+        return res.send("Sorry! To edit, you must be logged in.")
+    }
+    if (urlDatabase[req.params.id].userId != req.cookies.user_id){
+        return res.send("Sorry! To edit, the short url must be yours.")
+    }
+    urlDatabase[req.params.id].longURL = req.body.newLongUrl;
     res.redirect("/urls");
 })
-
-// app.post("/login", (req, res) => {
-//     res.cookie("username", req.body.username);
-//     res.redirect("/urls")
-// })
 
 app.post("/logout", (req, res) => {
     res.clearCookie("user_id");
@@ -113,6 +160,9 @@ app.post("/logout", (req, res) => {
 })
 
 app.get("/register", (req, res) => {
+    if(req.cookies.user_id) {
+        return res.redirect("/urls");
+    }
     const templateVars = {user: users[req.cookies.user_id]};
     res.render("register.ejs", templateVars);
 })
@@ -137,6 +187,9 @@ app.post("/register", (req, res) => {
 })
 
 app.get("/login", (req, res) => {
+    if(req.cookies.user_id) {
+        return res.redirect("/urls");
+    }
     const templateVars = {user: users[req.cookies.user_id]};
     res.render("login.ejs", templateVars);
 })
